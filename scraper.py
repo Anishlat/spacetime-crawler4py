@@ -1,5 +1,6 @@
 import re
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup as bs
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -15,6 +16,14 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+
+    if (resp.status != 200):
+        return []
+
+    soupified = bs(resp.raw_response.content)
+    aTags = soupified.select('a')
+    hyperlinks = [link['href'] for link in aTags if link['href'] != url and link['href'] != resp.url]
+
     return list()
 
 def is_valid(url):
@@ -23,8 +32,14 @@ def is_valid(url):
     # There are already some conditions that return False.
     try:
         parsed = urlparse(url)
+
         if parsed.scheme not in set(["http", "https"]):
             return False
+
+        accepted_hostnames = {"ics.uci.edu", "cs.uci.edu", "informatics.uci.edu", "stat.uci.edu"}   
+        if parsed.hostname not in accepted_hostnames:                                                   # might need to change to ending in these names instead of exact match
+            return False
+
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
