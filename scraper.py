@@ -24,7 +24,7 @@ def extract_next_links(url, resp):
     aTags = soupified.select('a')
     hyperlinks = [link['href'] for link in aTags if link['href'] != url and link['href'] != resp.url]
 
-    return list()
+    return hyperlinks
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
