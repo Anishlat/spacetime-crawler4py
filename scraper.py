@@ -2,9 +2,11 @@ import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
 
+# Takes a URL and a response object and returns a list of filtered links from the response object.
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -17,14 +19,16 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
+    # If status code != 200, error, return empty list
     if (resp.status != 200):
         return []
 
-    soupified = bs(resp.raw_response.content)
-    aTags = soupified.select('a')
+    soupified = bs(resp.raw_response.content)   # BeautifulSoup object
+    aTags = soupified.select('a')               # list of all <a> tags
     hyperlinks = [link['href'] for link in aTags if link['href'] != url and link['href'] != resp.url]
 
     return hyperlinks
+
 
 
 def is_valid(url):
@@ -37,9 +41,9 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             return False
 
-        # accepted_hostnames = {"ics.uci.edu", "cs.uci.edu", "informatics.uci.edu", "stat.uci.edu"}   
-        # if parsed.hostname not in accepted_hostnames:                                                   # might need to change to ending in these names instead of exact match
-        #     return False
+        accepted_hostnames = {"ics.uci.edu", "cs.uci.edu", "informatics.uci.edu", "stat.uci.edu"}   
+        if not any([parsed.hostname.endswith(hostname) for hostname in accepted_hostnames]):   # invalid hostname
+            return False
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
