@@ -9,9 +9,9 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     filtered_links = [link for link in links if is_valid(link)]
 
     # Save content of current page to local file if save_to_disk is True
-    if save_to_disk:
-        save_web_page(url, resp, save_to_folder)
-        
+    # if save_to_disk:
+    #     save_web_page(url, resp, save_to_folder)
+    print(filtered_links)
     return filtered_links
 
 def save_web_page(url, resp, save_to_folder):
