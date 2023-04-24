@@ -25,8 +25,8 @@ def save_web_page(url, resp, save_to_folder):
 
     # Create a new file in the folder and write the content of the page to it
     file_path = folder_path / file_name
-    with file_path.open('wb') as of:
-        of.write(resp.raw_response.content)
+    with file_path.open('w') as f:
+        f.write(resp.raw_response.content)
 
 
 # Implementation required.
