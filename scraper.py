@@ -28,7 +28,6 @@ def save_web_page(url, resp, save_to_folder):
     with file_path.open('w') as f:
         f.write(resp.raw_response.content)
 
-#
 
 # Implementation required.
 # url: the URL that was used to get the page
@@ -81,5 +80,3 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
-
-# this is a text by Virox
