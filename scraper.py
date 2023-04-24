@@ -16,6 +16,17 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
 
 def save_web_page(url, resp, save_to_folder):
     folder_path = Path(save_to_folder)
+    folder_path.mkdir(parents=True, exist_ok=True) # Make folder if it doesn't exist
+    
+    # Replace all non-alphanumeric characters with underscore + add html extension to file name
+    file_name = re.sub(r"[^\w\-_\. ]", '_', url) + '.html' 
+    
+    file_name = file_name[:255] # Truncate file name if it's too long
+
+    # Create a new file in the folder and write the content of the page to it
+    file_path = folder_path / file_name
+    with file_path.open('wb') as of:
+        of.write(resp.raw_response.content)
 
 
 # Implementation required.
