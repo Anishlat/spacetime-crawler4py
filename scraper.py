@@ -26,6 +26,7 @@ def extract_next_links(url, resp):
 
     return hyperlinks
 
+
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
@@ -36,9 +37,9 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             return False
 
-        accepted_hostnames = {"ics.uci.edu", "cs.uci.edu", "informatics.uci.edu", "stat.uci.edu"}   
-        if parsed.hostname not in accepted_hostnames:                                                   # might need to change to ending in these names instead of exact match
-            return False
+        # accepted_hostnames = {"ics.uci.edu", "cs.uci.edu", "informatics.uci.edu", "stat.uci.edu"}   
+        # if parsed.hostname not in accepted_hostnames:                                                   # might need to change to ending in these names instead of exact match
+        #     return False
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
