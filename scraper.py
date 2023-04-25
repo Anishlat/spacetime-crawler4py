@@ -45,7 +45,16 @@ def extract_next_links(url, resp):
 
     soupified = bs(resp.raw_response.content)   # BeautifulSoup object
     aTags = soupified.select('a')               # list of all <a> tags
-    hyperlinks = {link['href'].partition("#")[0] for link in aTags if link['href'] != url and link['href'] != resp.url}  # set of all hyperlinks without fragment, if any; exclude self-referential & duplicate links
+
+    # get all hyperlinks from webpage
+    hyperlinks = set()
+    for link in aTags:
+        try:
+            if link['href'] != url and link['href'] != resp.url:
+                hyperlinks.add(link['href'].partition("#")[0])
+
+        except KeyError:
+            pass
 
     return list(hyperlinks)
 
@@ -75,9 +84,12 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz"
+            + r"|odc"                                           # extensions added by us
+            + r")$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
-# Test
+    except AttributeError:
+        return False
