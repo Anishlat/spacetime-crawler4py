@@ -14,6 +14,7 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     # print(filtered_links)
     return filtered_links
 
+
 def save_web_page(url, resp, save_to_folder):
     folder_path = Path(save_to_folder)
     folder_path.mkdir(parents=True, exist_ok=True) # Make folder if it doesn't exist
@@ -25,7 +26,7 @@ def save_web_page(url, resp, save_to_folder):
 
     # Create a new file in the folder and write the content of the page to it
     file_path = folder_path / file_name
-    with file_path.open('w') as f:
+    with file_path.open('w') as f:            
         f.write(resp.raw_response.content)
 
 
@@ -85,7 +86,7 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz"
-            + r"|odc"                                           # extensions added by us
+            + r"|odc|ppsx"                                           # extensions added by us
             + r")$", parsed.path.lower())
 
     except TypeError:
@@ -93,3 +94,27 @@ def is_valid(url):
         raise
     except AttributeError:
         return False
+
+
+# # file for storing tokens : website
+# # tokensToLink.json
+# dict()
+# key = token
+# values = [(website link, number of times token was found on said website), etc... for all websites with that token]
+# # sort this list descending to get top 50 words, make sure to ignore stop words ^^
+# sum([count for link, count in values]) # to get sum of times token was found
+# set = stop words
+# set(sum).difference(stop words) # might need to resort, should solve number 3
+
+
+# # file for storing all unique websites without fragment
+# uniqueFiles.json
+# set((each website, number of words), etc)  # HTML markup doesn’t count as words
+
+# # file for number of unique subdomains
+# from collections import defaultdict
+# subdomains = defaultdict(int)
+
+# parsed = urlparse(resp.url)
+# subdomain[parsed.hostname] += 1
+# # Sort this alphabetically
