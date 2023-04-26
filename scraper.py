@@ -2,6 +2,8 @@ import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
 from pathlib import Path
+from collections import defaultdict
+
 
 # Takes a URL and a response object and returns a list of filtered links from the response object.
 def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
@@ -13,6 +15,21 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     #     save_web_page(url, resp, save_to_folder)
     # print(filtered_links)
     return filtered_links
+
+def tokenize(path) -> set:
+    tokens = set()
+    try:
+        with open(path, 'r', encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                newtokens = re.findall(r'[a-zA-Z0-9]+', line)
+                for newtoken in newtokens:
+                    tokens.add(newtoken.lower())
+    except:
+        return tokens
+
+    return tokens
+
+
 
 
 def save_web_page(url, resp, save_to_folder):
@@ -94,6 +111,7 @@ def is_valid(url):
         raise
     except AttributeError:
         return False
+
 
 
 # # file for storing tokens : website
