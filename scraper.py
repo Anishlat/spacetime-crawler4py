@@ -14,6 +14,7 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     # if save_to_disk:
     #     save_web_page(url, resp, save_to_folder)
     # print(filtered_links)
+    # print(str(len(filtered_links)))
     return filtered_links
 
 def tokenize(path) -> set:
