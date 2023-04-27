@@ -10,6 +10,13 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     links = extract_next_links(url, resp)
     filtered_links = [link for link in links if is_valid(link)]
 
+    # create temporary file with link's data for tokenizing purposes
+
+
+
+
+
+
     # Save content of current page to local file if save_to_disk is True
     # if save_to_disk:
     #     save_web_page(url, resp, save_to_folder)
