@@ -4,6 +4,11 @@ from bs4 import BeautifulSoup as bs
 from pathlib import Path
 from collections import defaultdict
 
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
+
 
 # Takes a URL and a response object and returns a list of filtered links from the response object.
 def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
@@ -130,6 +135,38 @@ def is_valid(url):
 # sum([count for link, count in values]) # to get sum of times token was found
 # set = stop words
 # set(sum).difference(stop words) # might need to resort, should solve number 3
+
+# IDEAS:
+# Maybe initialize the dict outside of the function, then pass it in as a parameter? Since we are 
+# processing files one by one, we can just add to the dict as we go along. Or maybe call this function
+# recursively, and pass in the dict as a parameter, and then return the dict at the end?
+def commonWords(file_path):
+    # Initialize an empty dictionary to store the word counts
+    word_counts = {}
+
+    # Read the contents of the file
+    with open(file_path, 'r') as file:
+        text = file.read()
+        
+        # Find all the words in the text, USE TOKENIZER INSTEAD
+        words = pattern.findall(text)
+        
+        # Remove the English stop words from the words list
+        words = [word.lower() for word in words if word.lower() not in stopwords.words('english')]
+        
+        # Count the frequency of each remaining word and add it to the word_counts dictionary
+        for word in words:
+            if word in word_counts:
+                word_counts[word] += 1
+            else:
+                word_counts[word] = 1
+
+    # Get the 50 most common words and write them to a new file
+    with open('word_counts.txt', 'w') as file:
+        for word, count in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:50]:
+            file.write(f'{word} {count}\n')
+
+
 
 
 # # file for storing all unique websites without fragment
