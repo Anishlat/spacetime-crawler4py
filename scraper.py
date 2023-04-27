@@ -7,6 +7,7 @@ from collections import defaultdict
 import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
+unique_pages = set() #Initializes Set to store unique pages
 
 
 
@@ -15,13 +16,10 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     links = extract_next_links(url, resp)
     filtered_links = [link for link in links if is_valid(link)]
 
+    url_without_fragment = url.partition("#")[0]  # Remove fragment from the URL
+    unique_pages.add(url_without_fragment) # Add the URL without fragment to the unique_pages set
+
     # create temporary file with link's data for tokenizing purposes
-
-
-
-
-
-
     # Save content of current page to local file if save_to_disk is True
     # if save_to_disk:
     #     save_web_page(url, resp, save_to_folder)
@@ -166,8 +164,7 @@ def commonWords(file_path):
         for word, count in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:50]:
             file.write(f'{word} {count}\n')
 
-
-
+print("Number of unique pages:", len(unique_pages))
 
 # # file for storing all unique websites without fragment
 # uniqueFiles.json
