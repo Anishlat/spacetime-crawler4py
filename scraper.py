@@ -17,6 +17,7 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     # print(str(len(filtered_links)))
     return filtered_links
 
+
 def tokenize(path) -> set:
     tokens = set()
     try:
@@ -29,8 +30,6 @@ def tokenize(path) -> set:
         return tokens
 
     return tokens
-
-
 
 
 def save_web_page(url, resp, save_to_folder):
