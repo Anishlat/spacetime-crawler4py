@@ -23,6 +23,6 @@ if __name__ == "__main__":
     parser.add_argument("--config_file", type=str, default="config.ini")
     # parser.add_argument("--save_to_disk", action="store_true", default=False)
     args = parser.parse_args()
-    create_base_files()
+    # create_base_files()
 
     main(args.config_file, args.restart)
