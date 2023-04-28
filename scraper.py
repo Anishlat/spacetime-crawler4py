@@ -3,11 +3,12 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
 from pathlib import Path
 from collections import defaultdict
+import json
 
 import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
-unique_pages = set() #Initializes Set to store unique pages
+#unique_pages = set() #Initializes Set to store unique pages
 
 
 
@@ -16,8 +17,10 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     links = extract_next_links(url, resp)
     filtered_links = [link for link in links if is_valid(link)]
 
-    url_without_fragment = url.partition("#")[0]  # Remove fragment from the URL
-    unique_pages.add(url_without_fragment) # Add the URL without fragment to the unique_pages set
+    unique_page_json(url)
+
+    #url_without_fragment = url.partition("#")[0]  # Remove fragment from the URL
+    #unique_pages.add(url_without_fragment) # Add the URL without fragment to the unique_pages set
 
     # create temporary file with link's data for tokenizing purposes
     # Save content of current page to local file if save_to_disk is True
@@ -164,7 +167,20 @@ def commonWords(file_path):
         for word, count in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:50]:
             file.write(f'{word} {count}\n')
 
-print("Number of unique pages:", len(unique_pages))
+#print("Number of unique pages:", len(unique_pages))
+
+def unique_page_json(url: str):
+    with open('urls.json', 'r') as file:
+        data = json.load(file)
+    if url not in data:
+        with open('urls.json', 'w') as file:
+            data.append(url)
+            json.dump(data, file)
+
+def num_unique_pages():
+    with open("urls.json", "r+") as f:
+        urls = json.load(f)
+        return len(urls)
 
 # # file for storing all unique websites without fragment
 # uniqueFiles.json
