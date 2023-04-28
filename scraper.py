@@ -193,3 +193,9 @@ def num_unique_pages():
 # parsed = urlparse(resp.url)
 # subdomain[parsed.hostname] += 1
 # # Sort this alphabetically
+
+
+# def somefunc (url):
+#     open urls.json
+#         if url is not in url.json's dict.keys
+#             add url to json where key = url, value =  0
