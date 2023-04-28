@@ -5,29 +5,21 @@ from pathlib import Path
 from collections import defaultdict
 import json
 
-import nltk
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-#unique_pages = set() #Initializes Set to store unique pages
+# import nltk
+# nltk.download('stopwords')
+# from nltk.corpus import stopwords
 
-
+# so we only compile the regex one time instead of many
+token_pattern = re.compile(r'[A-Za-z0-9]')
 
 # Takes a URL and a response object and returns a list of filtered links from the response object.
 def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     links = extract_next_links(url, resp)
     filtered_links = [link for link in links if is_valid(link)]
 
-    unique_page_json(url)
+    count
+    store_link(resp.url)
 
-    #url_without_fragment = url.partition("#")[0]  # Remove fragment from the URL
-    #unique_pages.add(url_without_fragment) # Add the URL without fragment to the unique_pages set
-
-    # create temporary file with link's data for tokenizing purposes
-    # Save content of current page to local file if save_to_disk is True
-    # if save_to_disk:
-    #     save_web_page(url, resp, save_to_folder)
-    # print(filtered_links)
-    # print(str(len(filtered_links)))
     return filtered_links
 
 
@@ -51,7 +43,6 @@ def save_web_page(url, resp, save_to_folder):
     
     # Replace all non-alphanumeric characters with underscore + add html extension to file name
     file_name = re.sub(r"[^\w\-_\. ]", '_', url) + '.html' 
-    
     file_name = file_name[:255] # Truncate file name if it's too long
 
     # Create a new file in the folder and write the content of the page to it
@@ -74,7 +65,7 @@ def extract_next_links(url, resp):
     if (resp.status != 200):
         return []
 
-    soupified = bs(resp.raw_response.content)   # BeautifulSoup object
+    soupified = bs(resp.raw_response.content, features='lxml')   # BeautifulSoup object
     aTags = soupified.select('a')               # list of all <a> tags
 
     # get all hyperlinks from webpage
@@ -141,6 +132,7 @@ def is_valid(url):
 # Maybe initialize the dict outside of the function, then pass it in as a parameter? Since we are 
 # processing files one by one, we can just add to the dict as we go along. Or maybe call this function
 # recursively, and pass in the dict as a parameter, and then return the dict at the end?
+'''
 def commonWords(file_path):
     # Initialize an empty dictionary to store the word counts
     word_counts = {}
@@ -166,23 +158,23 @@ def commonWords(file_path):
     with open('word_counts.txt', 'w') as file:
         for word, count in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:50]:
             file.write(f'{word} {count}\n')
+'''
 
 #print("Number of unique pages:", len(unique_pages))
 
-def unique_page_json(url: str):
-    with open('urls.json', 'r') as file:
+def store_link(url: str):
+    with open('data/urls.json', 'r') as file:
         data = json.load(file)
-    if url not in data:
-        with open('urls.json', 'w') as file:
-            data.append(url)
-            json.dump(data, file)
+    with open('data/urls.json', 'w') as file:
+        data[url] = 0
+        json.dump(data, file, indent=4)
 
 def num_unique_pages():
-    with open("urls.json", "r+") as f:
-        urls = json.load(f)
-        return len(urls)
+    data = None
+    with open("data/urls.json", "r") as file:
+        data = json.load(file)
+    return len(data)
 
-# # file for storing all unique websites without fragment
 # uniqueFiles.json
 # set((each website, number of words), etc)  # HTML markup doesn’t count as words
 
@@ -193,9 +185,3 @@ def num_unique_pages():
 # parsed = urlparse(resp.url)
 # subdomain[parsed.hostname] += 1
 # # Sort this alphabetically
-
-
-# def somefunc (url):
-#     open urls.json
-#         if url is not in url.json's dict.keys
-#             add url to json where key = url, value =  0
