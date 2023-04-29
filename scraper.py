@@ -2,53 +2,35 @@ import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
 from pathlib import Path
-from collections import defaultdict
 import json
+import lxml.html
+import lxml.etree
+from difflib import SequenceMatcher
+import bisect
 
 # import nltk
 # nltk.download('stopwords')
 # from nltk.corpus import stopwords
 
-# so we only compile the regex one time instead of many
-token_pattern = re.compile(r'[A-Za-z0-9]')
 
 # Takes a URL and a response object and returns a list of filtered links from the response object.
 def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
-    links = extract_next_links(url, resp)
-    filtered_links = [link for link in links if is_valid(link)]
+    filtered_links = []
+    try:
+        document = lxml.html.document_fromstring(resp.raw_response.content)         # html document
+        if len(document.text_content()) < 50000:                                    # avg word size 4.7 chars * 10,000 words
+            tokens, wordCount = tokenize(document.text_content())
+            store_link(resp.url, wordCount)                                         # store {link : word count} into data/urls.json
 
-    count
-    store_link(resp.url)
+            links = extract_next_links(url, resp)                                   # links found from resp.url
+            filtered_links = [link for link in links if is_valid(link)]             # only if links are valid
+
+    except AttributeError:          # Nonetype
+        return filtered_links
+    except lxml.etree.ParserError:  # empty HTML document
+        return []
 
     return filtered_links
-
-
-def tokenize(path) -> set:
-    tokens = set()
-    try:
-        with open(path, 'r', encoding="utf-8", errors="ignore") as f:
-            for line in f:
-                newtokens = re.findall(r'[a-zA-Z0-9]+', line)
-                for newtoken in newtokens:
-                    tokens.add(newtoken.lower())
-    except:
-        return tokens
-
-    return tokens
-
-
-def save_web_page(url, resp, save_to_folder):
-    folder_path = Path(save_to_folder)
-    folder_path.mkdir(parents=True, exist_ok=True) # Make folder if it doesn't exist
-    
-    # Replace all non-alphanumeric characters with underscore + add html extension to file name
-    file_name = re.sub(r"[^\w\-_\. ]", '_', url) + '.html' 
-    file_name = file_name[:255] # Truncate file name if it's too long
-
-    # Create a new file in the folder and write the content of the page to it
-    file_path = folder_path / file_name
-    with file_path.open('w') as f:            
-        f.write(resp.raw_response.content)
 
 
 # Implementation required.
@@ -66,16 +48,16 @@ def extract_next_links(url, resp):
         return []
 
     soupified = bs(resp.raw_response.content, features='lxml')   # BeautifulSoup object
-    aTags = soupified.select('a')               # list of all <a> tags
+    aTags = soupified.select('a')                                # list of all <a> tags
 
     # get all hyperlinks from webpage
     hyperlinks = set()
     for link in aTags:
         try:
-            if link['href'] != url and link['href'] != resp.url:
+            if link['href'] != url and link['href'] != resp.url:    # ignore self-referential link
                 hyperlinks.add(link['href'].partition("#")[0])
 
-        except KeyError:
+        except KeyError:    # no link given with 'href' tag
             pass
 
     return list(hyperlinks)
@@ -107,7 +89,7 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz"
-            + r"|odc|ppsx"                                           # extensions added by us
+            + r"|odc|ppsx|git|ps"                             # extensions added by us
             + r")$", parsed.path.lower())
 
     except TypeError:
@@ -116,6 +98,10 @@ def is_valid(url):
     except AttributeError:
         return False
 
+    if is_link_similar(url):    # ignore links with high similarity >95%
+        return False
+
+    return True
 
 
 # # file for storing tokens : website
@@ -160,14 +146,37 @@ def commonWords(file_path):
             file.write(f'{word} {count}\n')
 '''
 
-#print("Number of unique pages:", len(unique_pages))
 
-def store_link(url: str):
+# given a list of strings via bs4
+# return: tuple of 3 items: set of tokens, # of tokens, # of total words (includes repititons)
+def tokenize(text) -> (list[str], int, int):
+    tokens = []
+
+    try:
+        newtokens = re.findall(r'[a-zA-Z0-9]+', text)
+        for newtoken in newtokens:
+            tokens.append(newtoken.lower())
+    except:
+        return (tokens, len(tokens))
+
+    return (tokens, len(tokens))
+
+
+def store_link(url : str, wordCount : int):
     with open('data/urls.json', 'r') as file:
         data = json.load(file)
     with open('data/urls.json', 'w') as file:
-        data[url] = 0
+        data[url] = wordCount
         json.dump(data, file, indent=4)
+
+    with open('data/urlsSorted.json', 'r') as file:
+        data = json.load(file)
+        loc = bisect.bisect(data["urls"], url)
+        data["urls"].insert(loc, url)
+    with open('data/urlsSorted.json', 'w') as file:
+        # bisect.insort(data["urls"], url)       # added url into sorted list, O(log(N))
+        json.dump(data, file, indent=4)
+
 
 def num_unique_pages():
     data = None
@@ -175,13 +184,15 @@ def num_unique_pages():
         data = json.load(file)
     return len(data)
 
-# uniqueFiles.json
-# set((each website, number of words), etc)  # HTML markup doesn’t count as words
 
-# # file for number of unique subdomains
-# from collections import defaultdict
-# subdomains = defaultdict(int)
-
-# parsed = urlparse(resp.url)
-# subdomain[parsed.hostname] += 1
-# # Sort this alphabetically
+def is_link_similar(s : str) -> bool:
+    tr = False
+    with open('data/urls.json', 'r') as file:
+        data =  json.load(file)
+        idx = bisect.bisect(data["urls"], s)
+        if len(data["urls"]) >= 3 and idx != 0 and idx != len(data["urls"]) - 1:
+            diff1 = SequenceMatcher(None, s, data["urls"][idx - 1])
+            diff2 = SequenceMatcher(None, s, data["urls"][idx + 1])
+            if diff1 >= 0.95 or diff2 >= 0.95:
+                tr = True
+    return tr
