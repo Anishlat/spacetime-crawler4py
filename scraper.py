@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 import lxml.html
 import lxml.etree
-from difflib import SequenceMatcher
+from difflib import SequenceMatcher 
 import bisect
 from collections import defaultdict
 
@@ -19,14 +19,17 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     filtered_links = []
     try:
         if (is_valid(resp.url)):
+
+            links = extract_next_links(url, resp)                                   # links found from resp.url
+            if links is None:
+                return []
+            filtered_links = [link for link in links if is_valid(link)]             # only if links are valid
+
             document = lxml.html.document_fromstring(resp.raw_response.content)         # html document
             if len(document.text_content()) < 50000:                                    # avg word size 4.7 chars * 10,000 words
                 tokens, wordCount = tokenize(document.text_content())
                 store_link(resp.url, wordCount)                                         # store {link : word count} into data/urls.json
                 store_word_to_url_frequency(resp.url, tokens)
-
-                links = extract_next_links(url, resp)                                   # links found from resp.url
-                filtered_links = [link for link in links if is_valid(link)]             # only if links are valid
 
     except AttributeError:          # Nonetype
         return filtered_links
@@ -48,7 +51,7 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
 def extract_next_links(url, resp):
     # If status code != 200, error, return empty list
     if (resp.status != 200):
-        return []
+        return None
 
     soupified = bs(resp.raw_response.content, features='lxml')   # BeautifulSoup object
     aTags = soupified.select('a')                                # list of all <a> tags
@@ -197,7 +200,7 @@ def is_link_similar(s : str) -> bool:
         idx = bisect.bisect(data["urls"], s)
         if len(data["urls"]) >= 3 and idx != 0 and idx != len(data["urls"]) - 1:
             diff1 = SequenceMatcher(None, s, data["urls"][idx - 1]).ratio()
-            diff2 = SequenceMatcher(None, s, data["urls"][idx + 1]).ratio()
+            diff2 = SequenceMatcher(None, s, data["urls"][idx]).ratio()
             if diff1 >= 0.95 or diff2 >= 0.95:
                 tr = True
     return tr
