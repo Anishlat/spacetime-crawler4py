@@ -196,11 +196,20 @@ def is_link_similar(s : str) -> bool:
     with open('data/urlsSorted.json', 'r') as file:
         data =  json.load(file)
         idx = bisect.bisect(data["urls"], s)
-        if len(data["urls"]) >= 3 and idx != 0 and idx != len(data["urls"]) - 1:
-            diff1 = SequenceMatcher(None, s, data["urls"][idx - 1]).ratio()
-            diff2 = SequenceMatcher(None, s, data["urls"][idx]).ratio()
-            if diff1 >= 0.95 or diff2 >= 0.95:
-                tr = True
+        try:
+            if len(data["urls"]) >= 3: # and idx != 0 and idx != len(data["urls"]) - 1:
+                diff0 = SequenceMatcher(None, s, data["urls"][idx - 2]).ratio()
+                diff1 = SequenceMatcher(None, s, data["urls"][idx - 1]).ratio()
+                diff2 = SequenceMatcher(None, s, data["urls"][idx]).ratio()
+                diff3 = SequenceMatcher(None, s, data["urls"][idx + 1]).ratio()
+                if diff0 >= 0.95 and diff1 >= 0.95:
+                    tr = True
+                if diff2 >= 0.95 and diff3 >= 0.95:
+                    tr = True
+                if diff1 >= 0.95 and diff2 >= 0.95:
+                    tr = True
+        except IndexError:
+            pass
     return tr
 
 
