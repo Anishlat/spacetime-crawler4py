@@ -74,6 +74,9 @@ def extract_next_links(url, resp):
 # There are already some conditions that return False.
 def is_valid(url):
     try:
+        if is_link_similar(url):    # ignore links with high similarity >95%
+            return False
+
         parsed = urlparse(url)
 
         #invalid scheme
@@ -103,11 +106,6 @@ def is_valid(url):
         raise
     except AttributeError:
         return False
-
-    if is_link_similar(url):    # ignore links with high similarity >95%
-        return False
-
-    return True
 
 
 # # file for storing tokens : website
@@ -195,7 +193,7 @@ def num_unique_pages():
 
 def is_link_similar(s : str) -> bool:
     tr = False
-    with open('data/urls.json', 'r') as file:
+    with open('data/urlsSorted.json', 'r') as file:
         data =  json.load(file)
         idx = bisect.bisect(data["urls"], s)
         if len(data["urls"]) >= 3 and idx != 0 and idx != len(data["urls"]) - 1:
@@ -216,4 +214,4 @@ def store_word_to_url_frequency(url, tokens):
             else:
                 data[word].append([url, tokens[word]])
 
-        json.dump(data, file, indent=4)
+        json.dump(data, file, indent=2)
