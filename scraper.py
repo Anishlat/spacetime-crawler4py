@@ -1,13 +1,12 @@
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
-from pathlib import Path
-import json
 import lxml.html
 import lxml.etree
+from collections import defaultdict
+import json
 from difflib import SequenceMatcher 
 import bisect
-from collections import defaultdict
 
 # import nltk
 # nltk.download('stopwords')
@@ -18,20 +17,20 @@ from collections import defaultdict
 def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
     filtered_links = []
     try:
-        if (is_valid(resp.url)):
+        if (is_valid(resp.url)):    # only proceed if the given link is valid, mainly to see if url is similar to processed urls
 
-            links = extract_next_links(url, resp)                                   # links found from resp.url
-            if links is None:
+            links = extract_next_links(url, resp)   # links found from resp.url
+            if links is None:   # no urls on webpage
                 return []
-            filtered_links = [link for link in links if is_valid(link)]             # only if links are valid
+            filtered_links = [link for link in links if is_valid(link)]                 # only if links are valid
 
             document = lxml.html.document_fromstring(resp.raw_response.content)         # html document
-            if len(document.text_content()) < 50000:                                    # avg word size 4.7 chars * 10,000 words
-                tokens, wordCount = tokenize(document.text_content())
+            if len(document.text_content()) < 50000:                                    # avg word size 4.7 chars * 10,000 words, rounded up
+                tokens, wordCount = tokenize(document.text_content())                   # list of tokens, # of tokens
                 store_link(resp.url, wordCount)                                         # store {link : word count} into data/urls.json
-                store_word_to_url_frequency(resp.url, tokens)
+                store_word_to_url_frequency(resp.url, tokens)                           # store {tokens : [url, # of times token seen]} into data/tokensFrequency.json
 
-    except AttributeError:          # Nonetype
+    except AttributeError:          # None-type url
         return filtered_links
     except lxml.etree.ParserError:  # empty HTML document
         return []
@@ -49,8 +48,7 @@ def scraper(url, resp, save_to_disk=False, save_to_folder='scraped_pages'):
 #         resp.raw_response.content: the content of the page!
 # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 def extract_next_links(url, resp):
-    # If status code != 200, error, return empty list
-    if (resp.status != 200):
+    if (resp.status != 200): # if status != 200 OK, ignore
         return None
 
     soupified = bs(resp.raw_response.content, features='lxml')   # BeautifulSoup object
@@ -61,7 +59,7 @@ def extract_next_links(url, resp):
     for link in aTags:
         try:
             if link['href'] != url and link['href'] != resp.url:    # ignore self-referential link
-                hyperlinks.add(link['href'].partition("#")[0])
+                hyperlinks.add(link['href'].partition("#")[0])      # ignore fragment
 
         except KeyError:    # no link given with 'href' tag
             pass
@@ -104,7 +102,7 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
-    except AttributeError:  # url parsed incorrectly or is NoneType, does not have scheme' attribute
+    except AttributeError:  # url parsed incorrectly or is NoneType, does not have scheme attribute
         return False
 
 
@@ -151,76 +149,105 @@ def commonWords(file_path):
 '''
 
 
-# given a list of strings via bs4
-# return: tuple of 3 items: set of tokens, # of tokens, # of total words (includes repititons)
-def tokenize(text) -> (list[str], int, int):
+'''
+Returns the tokens found in a piece of text.
+    Params:
+        text: A piece of text to go through
+    Returns:
+        (tokens: list[str], tokenCount: int): List of tokens and size of list
+'''
+def tokenize(text) -> (list[str], int):
     tokens = defaultdict(int)
 
     try:
-        newtokens = re.findall(r'[a-zA-Z0-9]+', text)
+        newtokens = re.findall(r'[a-zA-Z0-9]+', text)   # get all tokens
         for newtoken in newtokens:
-            tokens[newtoken.lower()] += 1
-            # tokens.append(newtoken.lower())
+            tokens[newtoken.lower()] += 1               # treat token as lowercase, increment its count
     except:
         return (tokens, len(tokens))
 
     return (tokens, len(tokens))
 
 
-def store_link(url : str, wordCount : int):
+'''
+Stores the url and associated word count into data/urls.json, alphabetical order version into data/urlsSorted.json
+    Params:
+        url (str): url to store
+        wordCount (int): number of tokens or words in url
+'''
+def store_link(url : str, wordCount : int) -> None:
+    # add url to urls mapped to total word count
     with open('data/urls.json', 'r') as file:
         data = json.load(file)
     with open('data/urls.json', 'w') as file:
         data[url] = wordCount
-        json.dump(data, file, indent=4)
+        json.dump(data, file, indent=4)     # pretty dumb (indentation)
 
+    # add url into sorted list, for checking similarity between nearby links
     with open('data/urlsSorted.json', 'r') as file:
         data = json.load(file)
-        loc = bisect.bisect(data["urls"], url)
-        data["urls"].insert(loc, url)
+        loc = bisect.bisect(data["urls"], url)      # location for url to be added, O(log(N))
+        data["urls"].insert(loc, url)               # add url at loc
     with open('data/urlsSorted.json', 'w') as file:
-        # bisect.insort(data["urls"], url)       # added url into sorted list, O(log(N))
-        json.dump(data, file, indent=4)
+        json.dump(data, file, indent=4)     # pretty dumb (indentation)
 
 
-# Get number of unique webpages crawled
-def num_unique_pages():
-    data = None
+'''
+Get the number of unique urls from data/urls.json.
+    Returns:
+        count (int): number of urls
+'''
+def num_pages() -> int:
+    data = 0
     with open("data/urls.json", "r") as file:
         data = json.load(file)
-    return len(data)
+    return len(data)    # size of dictionary containing links
 
 
+'''
+Returns the tokens found in a piece of text.
+    Params:
+        s (str): url
+    Returns:
+        similar (bool): whether the url is too similar or not
+'''
 def is_link_similar(s : str) -> bool:
     tr = False
     with open('data/urlsSorted.json', 'r') as file:
         data =  json.load(file)
-        idx = bisect.bisect(data["urls"], s)
+        idx = bisect.bisect(data["urls"], s)    # get supposed new index of url in sorted list
         try:
-            if len(data["urls"]) >= 3: # and idx != 0 and idx != len(data["urls"]) - 1:
+            if len(data["urls"]) >= 3:
+                # similarity ratios, scaled 0-1
                 diff0 = SequenceMatcher(None, s, data["urls"][idx - 2]).ratio()
                 diff1 = SequenceMatcher(None, s, data["urls"][idx - 1]).ratio()
                 diff2 = SequenceMatcher(None, s, data["urls"][idx]).ratio()
                 diff3 = SequenceMatcher(None, s, data["urls"][idx + 1]).ratio()
-                if diff0 >= 0.95 and diff1 >= 0.95:
+                if diff0 >= 0.95 and diff1 >= 0.95:     # previous 2 are too similar
                     tr = True
-                if diff2 >= 0.95 and diff3 >= 0.95:
+                if diff2 >= 0.95 and diff3 >= 0.95:     # following 2 are too similar
                     tr = True
-                if diff1 >= 0.95 and diff2 >= 0.95:
+                if diff1 >= 0.95 and diff2 >= 0.95:     # surrounding 2 are too similar
                     tr = True
-        except IndexError:
+        except IndexError:      # indexOutOfBounds, ignore and move on to next
             pass
     return tr
 
 
-def store_word_to_url_frequency(url, tokens): 
+'''
+Returns the tokens found in a piece of text.
+    Params:
+        url (str): url
+        tokens (dict[str]->count): 
+'''
+def store_word_to_url_frequency(url, tokens) -> None: 
     with open('data/tokenFrequency.json', 'r') as file:
         data = json.load(file)
     with open('data/tokenFrequency.json', 'w') as file:
         for word in tokens:
             if word not in data:
-                data[word] = [[url, tokens[word]]]
+                data[word] = [[url, tokens[word]]]      # create the outer list if word has not been seen
             else:
-                data[word].append([url, tokens[word]])
+                data[word].append([url, tokens[word]])  # else just append the current url and # of times the token was seen 
 
         json.dump(data, file, indent=2)
