@@ -98,13 +98,13 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz"
-            + r"|odc|ppsx|git|ps"                             # extensions added by us
+            + r"|odc|ppsx|git|ps|bib"                             # extensions added by us
             + r")$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
-    except AttributeError:
+    except AttributeError:  # url parsed incorrectly or is NoneType, does not have scheme' attribute
         return False
 
 
