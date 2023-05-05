@@ -191,6 +191,27 @@ def store_link(url : str, wordCount : int) -> None:
     with open('data/urlsSorted.json', 'w') as file:
         json.dump(data, file, indent=4)     # pretty dumb (indentation)
 
+'''
+Get all subdomains and their counts from data/urls.json.
+    Returns:
+        subdomain_counts (dict[str]->int): dictionary of subdomains and their counts
+'''
+def count_subdomains():
+    # load the URLs from the JSON file
+    with open("urlsSorted.json", 'r') as f:
+        urls = json.load(f)
+
+    # count the occurrences of each subdomain
+    subdomain_counts = {}
+    for url in urls:
+        parsed_url = urlparse(url)
+        subdomain = parsed_url.hostname.split('.')[0]  # get the first part of the hostname
+        if subdomain not in subdomain_counts:
+            subdomain_counts[subdomain] = 0
+        subdomain_counts[subdomain] += 1
+
+    # return the result as a dictionary
+    return subdomain_counts
 
 '''
 Get the number of unique urls from data/urls.json.
