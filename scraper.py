@@ -106,49 +106,6 @@ def is_valid(url):
         return False
 
 
-# # file for storing tokens : website
-# # tokensToLink.json
-# dict()
-# key = token
-# values = [(website link, number of times token was found on said website), etc... for all websites with that token]
-# # sort this list descending to get top 50 words, make sure to ignore stop words ^^
-# sum([count for link, count in values]) # to get sum of times token was found
-# set = stop words
-# set(sum).difference(stop words) # might need to resort, should solve number 3
-
-# IDEAS:
-# Maybe initialize the dict outside of the function, then pass it in as a parameter? Since we are 
-# processing files one by one, we can just add to the dict as we go along. Or maybe call this function
-# recursively, and pass in the dict as a parameter, and then return the dict at the end?
-'''
-def commonWords(file_path):
-    # Initialize an empty dictionary to store the word counts
-    word_counts = {}
-
-    # Read the contents of the file
-    with open(file_path, 'r') as file:
-        text = file.read()
-        
-        # Find all the words in the text, USE TOKENIZER INSTEAD
-        words = pattern.findall(text)
-        
-        # Remove the English stop words from the words list
-        words = [word.lower() for word in words if word.lower() not in stopwords.words('english')]
-        
-        # Count the frequency of each remaining word and add it to the word_counts dictionary
-        for word in words:
-            if word in word_counts:
-                word_counts[word] += 1
-            else:
-                word_counts[word] = 1
-
-    # Get the 50 most common words and write them to a new file
-    with open('word_counts.txt', 'w') as file:
-        for word, count in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:50]:
-            file.write(f'{word} {count}\n')
-'''
-
-
 '''
 Returns the tokens found in a piece of text.
     Params:
@@ -198,20 +155,22 @@ Get all subdomains and their counts from data/urls.json.
 '''
 def count_subdomains():
     # load the URLs from the JSON file
-    with open("urlsSorted.json", 'r') as f:
-        urls = json.load(f)
+    with open("/Users/jerrychen/Desktop/UCI/Spring23/INF141/subdom/urlsSorted.json", 'r') as f:
+        urls = json.load(f)["urls"]
 
     # count the occurrences of each subdomain
     subdomain_counts = {}
     for url in urls:
         parsed_url = urlparse(url)
-        subdomain = parsed_url.hostname.split('.')[0]  # get the first part of the hostname
-        if subdomain not in subdomain_counts:
-            subdomain_counts[subdomain] = 0
-        subdomain_counts[subdomain] += 1
+        if parsed_url.hostname.endswith('.ics.uci.edu'):
+            subdomain = parsed_url.hostname.split('.')[0]  # get the first part of the hostname
+            if subdomain not in subdomain_counts:
+                subdomain_counts[subdomain] = 0
+            subdomain_counts[subdomain] += 1
 
     # return the result as a dictionary
     return subdomain_counts
+
 
 '''
 Get the number of unique urls from data/urls.json.
